@@ -153,31 +153,34 @@ let gameDiv = document.getElementById('game');
 let onCursorChange = function(mutationsList, observer) {
 	let cursorCSS = $(gameDiv).css('cursor');
 	let regexResult = cursorCSS.match(/img\/(?:.+).png/);
-	let cursorPath = regexResult[0];
-	
-	mouse.setSource(cursorPath);
-	
-	let cursorSizeGeneral = Number(cursorPath.match(/\d+/g).shift()) * 16;
-	let cursorSize = {width: cursorSizeGeneral, height : cursorSizeGeneral};
-	if(cursorPath.length === "img/cursor-5.png".length) {
-		// it is special
-		cursorSize.width *= 45/80;
-		cursorSize.height *= 60/80;
-	}
-	
-	mouse.setSize(cursorSize);
-	
-	let cursorSettings = cursorCSS.substring(regexResult.index);
-	let [offsetX, offsetY] = cursorSettings
-	                                .match(/(\d+)(?:\s)(\d+)/)
-	                                .splice(1)
-									.map((n) => Number(n));
-	
+	if(regexResult) {
+		let cursorPath = regexResult[0];
+		
+		mouse.setSource(cursorPath);
+		
+		let cursorSizeGeneral = Number(cursorPath.match(/\d+/g).shift()) * 16;
+		let cursorSize = {width: cursorSizeGeneral, height : cursorSizeGeneral};
+		if(cursorPath.length === "img/cursor-5.png".length) {
+			// it is special
+			cursorSize.width *= 45/80;
+			cursorSize.height *= 60/80;
+		}
+		
+		mouse.setSize(cursorSize);
+		
+		let cursorSettings = cursorCSS.substring(regexResult.index);
+		let [offsetX, offsetY] = cursorSettings
+										.match(/(\d+)(?:\s)(\d+)/)
+										.splice(1)
+										.map((n) => Number(n));
+		
 
-	mouse.setCursorOffset({
-		offsetX,
-		offsetY
-	});
+		mouse.setCursorOffset({
+			offsetX,
+			offsetY
+		});	
+	}
+
 	
 };
 let cursorObserver = new MutationObserver(onCursorChange);
