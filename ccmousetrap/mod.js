@@ -63,10 +63,9 @@ class Mouse {
 		this.cursor.style.top = "" + this.pos.y + "px";
 	}
 }
-function initMouse(){
-	window.mouse = new Mouse();
-	
-}
+let mouse = new Mouse();
+
+
 
 function validatePos(mouse, maxWidth, maxHeight) {
     let {x , y } = mouse.getPos();
@@ -111,38 +110,39 @@ class Canvas {
 function toNumber(str) {
 	return Number(str.match(/\d+/g).shift());
 }
-function initCanvas() {
-	window.canvas = new Canvas();
-	window.canvas.sync();
-}
+let canvas = new Canvas();
+canvas.sync();
+
 function setupCursor() {
-	
-	cc.sc.controls[cc.ig.input.getMouseX] = function() {
-		return (mouse.getPos().x - canvas.getInstance().offsetLeft 
-		        + mouse.getCursorOffset().x) * 
-				(ig.system.width/toNumber(canvas.getInstance().style.width));
-	}
-	cc.sc.controls[cc.ig.input.getMouseY] = function() {
-		return (mouse.getPos().y - canvas.getInstance().offsetTop 
-		+ mouse.getCursorOffset().y) 
-		* (ig.system.height/toNumber(canvas.getInstance().style.height));
-	}
-	Object.defineProperty(cc.ig.input.mouse, 'x', {
-		get() {
-			return cc.sc.controls[cc.ig.input.getMouseX]();
-	   },
-	   set(b) {
-		this.value = b;
-	   }
+	sc.Control.inject({
+		getMouseX() {
+			return (mouse.getPos().x - canvas.getInstance().offsetLeft 
+			+ mouse.getCursorOffset().x) * 
+			(ig.system.width/toNumber(canvas.getInstance().style.width))
+		},
+		getMouseY() {
+			return (mouse.getPos().y - canvas.getInstance().offsetTop 
+			+ mouse.getCursorOffset().y) 
+			* (ig.system.height/toNumber(canvas.getInstance().style.height));
+		}
 	});
 
-	Object.defineProperty(cc.ig.input.mouse, 'y', {
-	   get() {
-			return cc.sc.controls[cc.ig.input.getMouseY]();
-	   },
-	   set(b) {
-		this.value = b;
-	   }
+	Object.defineProperty(ig.input.mouse, 'x', {
+		get() {
+			return sc.control.getMouseX();
+		},
+		set(b) {
+				this.value = b;
+		}
+	});
+
+	Object.defineProperty(ig.input.mouse, 'y', {
+		get() {
+			return sc.control.getMouseY();
+		},
+		set(b) {
+			this.value = b;
+		}
 	});
 }
 
@@ -190,41 +190,44 @@ cursorObserver.observe(gameDiv, { attributes: true});
 
 
 
-
-document.body.addEventListener('modsLoaded', function() {
-	initMouse();
-	initCanvas();
-	setupCursor();
-	canvas.getInstance().addEventListener("click", function(e) {
-		console.debug("Mouse clicked", mouse.isLocked());
-		if(!mouse.isLocked()) {
-			this.requestPointerLock();
-			console.debug('Requesting lock');
-			mouse.setPos({
-				x: e.clientX,
-				y: e.clientY
+ig.module("impact.base.mouse-trap").requires("game.main").defines(function() {
+	sc.CrossCode.inject({
+		init() {
+			this.parent();
+			setupCursor();
+			canvas.getInstance().addEventListener("click", function(e) {
+				console.debug("Mouse clicked", mouse.isLocked());
+				if(!mouse.isLocked()) {
+					this.requestPointerLock();
+					console.debug('Requesting lock');
+					mouse.setPos({
+						x: e.clientX,
+						y: e.clientY
+					});
+					mouse.lock();
+				}
 			});
-			mouse.lock();
+			window.addEventListener("blur", function() {
+				document.exitPointerLock();
+				mouse.unlock();
+				console.debug("Released pointer lock.");
+			});
+			canvas.getInstance().addEventListener("mousemove", function(e) {
+				if(!mouse.isLocked()) {
+					mouse.setPos({
+						x: e.clientX,
+						y: e.clientY
+					});
+					return;
+				}
+				mouse.setOffset({
+					offX: e.movementX,
+					offY: e.movementY
+				});
+				validatePos(mouse, innerWidth, innerHeight);
+				mouse.updateCursor();
+			});
 		}
 	});
-	window.addEventListener("blur", function() {
-		document.exitPointerLock();
-		mouse.unlock();
-		console.debug("Released pointer lock.");
-	});
-	canvas.getInstance().addEventListener("mousemove", function(e) {
-		if(!mouse.isLocked()) {
-			mouse.setPos({
-				x: e.clientX,
-				y: e.clientY
-			});
-			return;
-		}
-		mouse.setOffset({
-			offX: e.movementX,
-			offY: e.movementY
-		});
-		validatePos(mouse, innerWidth, innerHeight);
-		mouse.updateCursor();
-	});
+	
 });
