@@ -1,8 +1,8 @@
 {
 	"name" : "Mouse trap",
-	"main" : "mod.js",
-	"table" : "def.db",
+	"prestart" : "mod.js",
+	
 	"dependencies" : {
-		"crosscode" : ">=1.0.0"
+		"crosscode" : ">=1.1.0"
 	}
 }
